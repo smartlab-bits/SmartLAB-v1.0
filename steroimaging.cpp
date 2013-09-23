@@ -10,8 +10,8 @@ const MatchingLevel Constants::MAX_MATCHING_LEVEL = {11, 11};
 const double Constants::THRESHHOLD_SCORE = 300;
 
 
-
-double distsq(PixPoint p1, PixPoint p2)
+//for finding the Euclidean distance between two pixels points
+double distsq(PixPoint p1, PixPoint p2)    
 {
     return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
 }
@@ -56,6 +56,8 @@ CandidatePixel::CandidatePixel(PixPoint p,long int t,long int n,double d,double 
     score = s;
 }
 
+
+// calculates score based on totalColorDiff and noPixelsMatchedWith
 void CandidatePixel::computeScore()
 {
     score = (double)totalColorDiff / noPixelsMatchedWith;
@@ -108,7 +110,10 @@ void PointCorresponder::testCandidatePixel(Image &img1, Image &img2, PixPoint in
 }
 
 
-
+/*
+to filter out pixels with huge differnce in pixel values
+at one go absolute approach is used
+*/
 CPlist PointCorresponder::qualifyPointsAbsolute(Image &img1, Image &img2, PixPoint inPoint, Rectangle rect, MatchingLevel ml, Image mask)
 {
     CPlist cpixelList;
@@ -140,6 +145,13 @@ CPlist PointCorresponder::qualifyPointsAbsolute(Image &img1, Image &img2, PixPoi
     return cpixelList;
 }
 
+
+/*
+after absolute filtering, relative filtering is done by
+calculating score based on diifernce of pixel values for 
+differnt kernel sizes of surrounding pixels
+and sorting a list of candidate pixels to rank them.
+*/
 CPlist PointCorresponder::qualifyPointsRelative(Image &img1, Image &img2, PixPoint inPoint, CPlist cpixelList1, MatchingLevel ml)
 {
     CPlist::iterator it = cpixelList1.begin();
@@ -162,6 +174,14 @@ CPlist PointCorresponder::qualifyPointsRelative(Image &img1, Image &img2, PixPoi
     return cpixelList1;
 }
 
+
+/*
+first this function uses absolute filtering
+and then uses relative fitering iteratively
+over reduced size of input pixels to the qualifyPointsRelative()
+and stops after a particular number of iterations OR
+after the size of list of Candidate pixels getting reduced to one.
+*/
 PixPoint PointCorresponder::correspondPoint(Image& img1, Image& img2, PixPoint inPoint, Rectangle rect, Image mask)
 {
     CPlist cpixelList;
@@ -197,8 +217,7 @@ PixPoint PointCorresponder::correspondPoint(Image& img1, Image& img2, PixPoint i
 }
 
 
-
-
+//checks if the coordinates are invalid to represent a pixel (out of bounds)
 bool is_valid(PixPoint p, Image& img)
 {
     return p.x >= 0 &&  p.x < img.cols && p.y >= 0 && p.y < img.rows;
